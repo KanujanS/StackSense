@@ -123,7 +123,7 @@ STACK_REASONS = {
 
 
 def build_input_vector(domain, fr, nfr, size, team, budget, duration, deploy, language):
-    """Convert user form inputs into the 394-feature vector the model expects."""
+    """Convert user form inputs into the base feature vector from FEAT_NAMES."""
 
     # Start with all zeros
     row = {col: 0.0 for col in FEAT_NAMES}
@@ -156,21 +156,41 @@ def build_input_vector(domain, fr, nfr, size, team, budget, duration, deploy, la
     return pd.DataFrame([row])[FEAT_NAMES]
 
 
+def align_input_for_model(X_input, model):
+    """Pad/trim base features to satisfy each model's expected feature count."""
+    expected = int(getattr(model, "n_features_in_", X_input.shape[1]))
+    arr = X_input.to_numpy(dtype=float)
+
+    if arr.shape[1] < expected:
+        # Some saved models were trained with extra columns that are not in FEAT_NAMES.
+        # Use zero padding for unknown columns to keep inference robust.
+        pad = np.zeros((arr.shape[0], expected - arr.shape[1]), dtype=float)
+        arr = np.hstack([arr, pad])
+    elif arr.shape[1] > expected:
+        arr = arr[:, :expected]
+
+    return arr
+
+
 def get_recommendation(domain, fr, nfr, size, team, budget, duration, deploy, language):
     """Run prediction and return structured results with confidence scores."""
     X_input = build_input_vector(
         domain, fr, nfr, size, team, budget, duration, deploy, language
     )
 
+    X_fe = align_input_for_model(X_input, MODEL_FE)
+    X_be = align_input_for_model(X_input, MODEL_BE)
+    X_db = align_input_for_model(X_input, MODEL_DB)
+
     # Predictions
-    fe_pred = LE_FE.inverse_transform(MODEL_FE.predict(X_input))[0]
-    be_pred = LE_BE.inverse_transform(MODEL_BE.predict(X_input))[0]
-    db_pred = LE_DB.inverse_transform(MODEL_DB.predict(X_input))[0]
+    fe_pred = LE_FE.inverse_transform(MODEL_FE.predict(X_fe))[0]
+    be_pred = LE_BE.inverse_transform(MODEL_BE.predict(X_be))[0]
+    db_pred = LE_DB.inverse_transform(MODEL_DB.predict(X_db))[0]
 
     # Confidence probabilities
-    fe_proba = MODEL_FE.predict_proba(X_input)[0]
-    be_proba = MODEL_BE.predict_proba(X_input)[0]
-    db_proba = MODEL_DB.predict_proba(X_input)[0]
+    fe_proba = MODEL_FE.predict_proba(X_fe)[0]
+    be_proba = MODEL_BE.predict_proba(X_be)[0]
+    db_proba = MODEL_DB.predict_proba(X_db)[0]
 
     # Top-3 alternatives for each target
     fe_top3 = sorted(zip(LE_FE.classes_, fe_proba), key=lambda x: -x[1])[:3]
@@ -266,6 +286,11 @@ def health():
         "status": "ok",
         "model": MODEL_NAME,
         "features": len(FEAT_NAMES),
+        "features_expected": {
+            "frontend": int(getattr(MODEL_FE, "n_features_in_", len(FEAT_NAMES))),
+            "backend": int(getattr(MODEL_BE, "n_features_in_", len(FEAT_NAMES))),
+            "database": int(getattr(MODEL_DB, "n_features_in_", len(FEAT_NAMES))),
+        },
         "frontend_classes": list(LE_FE.classes_),
         "backend_classes":  list(LE_BE.classes_),
         "database_classes": list(LE_DB.classes_),
