@@ -17,8 +17,8 @@ Highlights
 
 What this repo contains
 -----------------------
-- app.py — Flask application and inference logic (main entrypoint). See [app.py](</Users/kanukany/Documents/SE8101 - Research /StackSense/app.py>).
-- templates/index.html — Minimal UI served by Flask. See [templates/](/Users/kanukany/Documents/SE8101 - Research /StackSense/templates).
+- app.py — Flask application and inference logic (main entrypoint). See [app.py].
+- templates/index.html — Minimal UI served by Flask. See [templates/].
 - best_model.pkl — Main trained model bundle (may contain multiple sub-models or an ensemble).
 - tfidf_vectorizer.pkl — TF-IDF vectorizer used to convert requirement text into features.
 - label_encoder_frontend.pkl, label_encoder_backend.pkl, label_encoder_database.pkl — Label encoders that map model outputs to human-friendly names.
@@ -53,7 +53,7 @@ Usage
 API
 ---
 - GET / — Serves the web UI (templates/index.html).
-- POST /predict — Returns a JSON response with recommended frontend, backend, and database choices plus associated confidence scores. Check [app.py](</Users/kanukany/Documents/SE8101 - Research /StackSense/app.py>) for the exact request/response schema.
+- POST /predict — Returns a JSON response with recommended frontend, backend, and database choices plus associated confidence scores. Check [app.py] for the exact request/response schema.
 - GET /health — Returns model metadata and available classes (useful for automated health checks).
 
 Example /predict input (JSON)
@@ -130,7 +130,7 @@ Add a LICENSE file to explicitly state licensing terms. The MIT license is a com
 
 Contact / Notes
 ---------------
-For questions about how inference works, inspect [app.py](</Users/kanukany/Documents/SE8101 - Research /StackSense/app.py>) and the frontend in [templates/](/Users/kanukany/Documents/SE8101 - Research /StackSense/templates).
+For questions about how inference works, inspect [app.py] and the frontend in [templates/](/Users/kanukany/Documents/SE8101 - Research /StackSense/templates).
 
 Acknowledgements
 -----------------
